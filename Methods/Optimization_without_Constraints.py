@@ -100,3 +100,32 @@ ax.set_zlabel('f(x,y)')
 ax.set_title('3D Surface Plot of f(x,y) with Stationary Points')
 
 plt.show()
+
+
+# Create a new figure for the 2D plot
+plt.figure(figsize=(8, 6))
+
+# Create a contour plot of the function
+contours = plt.contour(X, Y, Z, levels=20,map='viridis')
+plt.clabel(contours, inline=True, fontsize=8)
+plt.title(' Contour Plot of f(x,y) with Gradient Field')
+plt.xlabel('x')
+plt.ylabel('y')
+
+# Convert the gradient components to numpy functions
+grad_x = sp.lambdify((x, y), gradient[0], 'numpy')
+grad_y = sp.lambdify((x, y), gradient[1], 'numpy')
+U = grad_x(X, Y)
+V = grad_y(X, Y)
+
+
+
+# Mark the stationary points on the 2D plot
+for point in points:
+    if not isinstance(point, dict):
+        point = dict(zip([x, y], point))
+    x_val = float(point[x])
+    y_val = float(point[y])
+    plt.plot(x_val, y_val, 'bo', markersize=8)
+
+plt.show()
