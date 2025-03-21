@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 # Define symbols and function
 x, y = sp.symbols('x y')
-f = x**2 - 3*x + y**2 - 3*y
+f =  x**2 - 3*x + y**2 - 3*y
 print("f(x,y) =", f)
 
 # Compute the gradient (partial derivatives)
@@ -12,16 +12,11 @@ gradient = [sp.diff(f, x), sp.diff(f, y)]
 print("Gradient:", gradient)
 
 # Solve for stationary points (where the gradient equals zero)
-stationary_points = sp.solve(gradient, (x, y))
+stationary_points = sp.solve(gradient, (x, y), dict=True)  # using dict=True to get dictionaries
 print("Stationary Points:", stationary_points)
 
-# Ensure we always have a list of points:
-if isinstance(stationary_points, dict):
-    points = [stationary_points]
-elif isinstance(stationary_points, list):
-    points = stationary_points
-else:
-    points = list(stationary_points)
+# Filter only real stationary points
+points = [pt for pt in stationary_points if all(val.is_real for val in pt.values())]
 
 # Compute the Hessian matrix (second partial derivatives)
 Hessian = [[sp.diff(f, x, x), sp.diff(f, x, y)],
@@ -39,18 +34,22 @@ def classify_stationary_point(Hessian, point):
     D = H_eval[0][0] * H_eval[1][1] - H_eval[0][1] * H_eval[1][0]
     f_xx = H_eval[0][0]
     
+    # Use numerical evaluation with chop=True to remove negligible imaginary parts
+    D_val = float(sp.N(D, chop=True))
+    f_xx_val = float(sp.N(f_xx, chop=True))
+    
     # Classify the stationary point based on the determinant and f_xx
-    if D > 0:
-        if f_xx > 0:
+    if D_val > 0:
+        if f_xx_val > 0:
             local_ext = "Local Minimum"
             convexity = "Convex (locally)"
-        elif f_xx < 0:
+        elif f_xx_val < 0:
             local_ext = "Local Maximum"
             convexity = "Concave (locally)"
         else:
             local_ext = "Test inconclusive (f_xx = 0)"
             convexity = "Indeterminate"
-    elif D < 0:
+    elif D_val < 0:
         local_ext = "Saddle Point"
         convexity = "Indefinite"
     else:
@@ -59,16 +58,14 @@ def classify_stationary_point(Hessian, point):
         
     return local_ext, convexity
 
-# Classify all stationary points
+# Classify all stationary points and print results
 for point in points:
     classification = classify_stationary_point(Hessian, point)
     print(f"\nStationary point {point}:")
     print("  Local Classification:", classification[0])
     print("  Convexity/Concavity:", classification[1])
 
-
-# Plot ------------------------------------------------------
-
+# --------------------- 3D Plot Section ---------------------
 # Create a meshgrid for x and y values
 x_vals = np.linspace(-3, 6, 100)
 y_vals = np.linspace(-3, 6, 100)
@@ -100,6 +97,6 @@ for point in points:
 ax.set_xlabel('x')
 ax.set_ylabel('y')
 ax.set_zlabel('f(x,y)')
-ax.set_title('Surface Plot of f(x,y) with Stationary Points')
+ax.set_title('3D Surface Plot of f(x,y) with Stationary Points')
 
 plt.show()
