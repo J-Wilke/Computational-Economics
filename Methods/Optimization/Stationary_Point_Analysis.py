@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 # Define symbols and function
 x, y = sp.symbols('x y')
-f =  x**2 - 3*x + y**2 - 3*y
+f =  x**2 * y + y**2 * x
 print("f(x,y) =", f)
 
 # Compute the gradient (partial derivatives)
@@ -24,46 +24,58 @@ Hessian = [[sp.diff(f, x, x), sp.diff(f, x, y)],
 print("Hessian Matrix:", Hessian)
 
 def classify_stationary_point(Hessian, point):
-    # If the point is not a dictionary (e.g., it is a tuple), convert it to a dictionary mapping symbols to values.
+    # Check that 'point' is a dictionary and extract x and y values
     if not isinstance(point, dict):
         point = dict(zip([x, y], point))
     
-    # Evaluate the Hessian matrix at the stationary point
-    H_eval = [[expr.subs(point) for expr in row] for row in Hessian]
-    # Calculate the determinant: D = f_xx * f_yy - (f_xy)^2
-    D = H_eval[0][0] * H_eval[1][1] - H_eval[0][1] * H_eval[1][0]
-    f_xx = H_eval[0][0]
+    # Evaluate the Hessian matrix at the given point 
+    H_eval_list = [[expr.subs(point) for expr in row] for row in Hessian]
     
-    # Use numerical evaluation with chop=True to remove negligible imaginary parts
+    # Local classification based on the determinant and trace of the Hessian matrix
+    D = H_eval_list[0][0] * H_eval_list[1][1] - H_eval_list[0][1] * H_eval_list[1][0]
+    f_xx = H_eval_list[0][0]
     D_val = float(sp.N(D, chop=True))
     f_xx_val = float(sp.N(f_xx, chop=True))
     
-    # Classify the stationary point based on the determinant and f_xx
     if D_val > 0:
         if f_xx_val > 0:
-            local_ext = "Local Minimum"
-            convexity = "Convex (locally)"
+            local_ext = "Minimum"
+            local_convexity = "konvex"
         elif f_xx_val < 0:
-            local_ext = "Local Maximum"
-            convexity = "Concave (locally)"
+            local_ext = "Maximum"
+            local_convexity = "konkav"
         else:
-            local_ext = "Test inconclusive (f_xx = 0)"
-            convexity = "Indeterminate"
+            local_ext = "nicht eindeutig (f_xx = 0)"
+            local_convexity = "Indeterminiert"
     elif D_val < 0:
-        local_ext = "Saddle Point"
-        convexity = "Indefinite"
+        local_ext = "Sattelpunkt"
+        local_convexity = "Indefinit"
     else:
-        local_ext = "Test inconclusive (D = 0)"
-        convexity = "Indeterminate"
-        
-    return local_ext, convexity
+        local_ext = "nicht eindeutig (D = 0)"
+        local_convexity = "Indeterminiert"
+    
+    # Für globale Klassifikation: 
+    # Bei quadratischen Funktionen (konstante Hesse-Matrix) reicht die Eigenwertanalyse aus.
+    H_eval = sp.Matrix(H_eval_list)
+    eigenvalues = [float(sp.N(ev, chop=True)) for ev in H_eval.eigenvals().keys()]
+    
+    if local_ext == "Minimum" and all(ev > 0 for ev in eigenvalues):
+        global_ext = "Global minimum (global konvex)"
+    elif local_ext == "Maximum" and all(ev < 0 for ev in eigenvalues):
+        global_ext = "Global maximum (global konkave)"
+    else:
+        # Bei Sattelpunkt oder unklaren Fällen wird nur die lokale Klassifikation zurückgegeben
+        global_ext = local_ext
+    
+    return global_ext, local_convexity
+
 
 # Classify all stationary points and print results
 for point in points:
     classification = classify_stationary_point(Hessian, point)
     print(f"\nStationary point {point}:")
-    print("  Local Classification:", classification[0])
-    print("  Convexity/Concavity:", classification[1])
+    print("Classification:", classification[0])
+    print("Convexity/Concavity:", classification[1])
 
 # --------------------- 3D Plot Section ---------------------
 # Create a meshgrid for x and y values
@@ -106,7 +118,7 @@ plt.show()
 plt.figure(figsize=(8, 6))
 
 # Create a contour plot of the function
-contours = plt.contour(X, Y, Z, levels=20,map='viridis')
+contours = plt.contour(X, Y, Z, levels=20,cmap='viridis')
 plt.clabel(contours, inline=True, fontsize=8)
 plt.title(' Contour Plot of f(x,y) with Gradient Field')
 plt.xlabel('x')
