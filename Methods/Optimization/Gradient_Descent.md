@@ -47,6 +47,10 @@ final_x, x_history = gradient_descent(f, x, learning_rate=0.1, num_steps=50)
 print("Final x:", np.round(final_x, 4))
 ```
 
+    Gradient at x = [10. 10.] : [20. 20.]
+    Final x: [0.0001 0.0001]
+    
+
 
 ```python
 
@@ -97,3 +101,9 @@ def plot_function_3d(f, x1_range=(-5, 5), x2_range=(-5, 5), num_points=400, x_hi
 # The optimum is automatically provided as final_x from the gradient descent.
 plot_function_3d(f, x1_range=(-10, 10), x2_range=(-10, 10), x_history=x_history, optimum=final_x)
 ```
+
+
+    
+![png](output_5_0.png)
+    
+
